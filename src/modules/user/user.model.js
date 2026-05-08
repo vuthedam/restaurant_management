@@ -1,10 +1,13 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+
+import { USER_ROLES } from "../../common/constants/user-role.enum.js";
+import { schemaOptions } from "../../common/constants/schema-options.js";
 
 const userSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
-      required: true,
       trim: true,
       minlength: 2,
       maxlength: 100,
@@ -14,31 +17,31 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      trim: true,
       lowercase: true,
-      maxlength: 100,
+      trim: true,
+      index: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email"],
     },
 
     phone: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
       trim: true,
-      minlength: 9,
-      maxlength: 15,
     },
 
     password: {
       type: String,
-      required: true,
       minlength: 6,
+      select: false,
     },
 
     role: {
       type: String,
-      enum: ["admin", "staff"],
-      default: "staff",
+      enum: Object.values(USER_ROLES),
       required: true,
+      default: USER_ROLES.STAFF,
+      index: true,
     },
 
     avatar: {
@@ -46,10 +49,10 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-    status: {
-      type: String,
-      enum: ["active", "inactive", "blocked"],
-      default: "active",
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
     },
 
     lastLoginAt: {
@@ -57,13 +60,16 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
   },
-  {
-    timestamps: true,
-    versionKey: false,
-  },
+  schemaOptions,
 );
 
-userSchema.index({ role: 1 });
-userSchema.index({ status: 1 });
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  this.password = await bcrypt.hash(this.password, 10);
+});
 
-export default mongoose.model("User", userSchema);
+userSchema.methods.comparePassword = async function (password) {
+  return bcrypt.compare(password, this.password);
+};
+
+export const User = mongoose.model("User", userSchema);

@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import handleAsync from "../../common/utils/handleAsync.js";
 import { configenv } from "../../common/configs/configenv.js";
-import  User  from "../user/user.model.js";
+import { User } from "../user/user.model.js";
 
 export const registerAuth = handleAsync(async (req, res) => {
   const { email, password, fullName, phone } = req.body;
@@ -15,11 +15,9 @@ export const registerAuth = handleAsync(async (req, res) => {
     });
   }
 
-  const hashPassword = await bcrypt.hash(password, 10);
-
   const newUser = await User.create({
     email,
-    password: hashPassword,
+    password,
     fullName,
     phone,
   });
@@ -37,7 +35,7 @@ export const loginAuth = handleAsync(async (req, res) => {
 
   const user = await User.findOne({
     email,
-    status: "active",
+    isActive: true,
   }).select("+password");
 
   if (!user) {
@@ -48,7 +46,7 @@ export const loginAuth = handleAsync(async (req, res) => {
     });
   }
 
-  const isMatch = await bcrypt.compare(password, user.password);
+  const isMatch = await user.comparePassword(password);
 
   if (!isMatch) {
     return res.status(400).json({
