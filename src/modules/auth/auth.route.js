@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { loginAuth, registerAuth } from "./auth.controller.js";
-import {validBodyRequest} from "../../common/utils/validBodyRequest.js";
+import validBodyRequest from "../../common/utils/validBodyRequest.js";
 import { loginAuthSchema, registerAuthSchema } from "./auth.schema.js";
 
 const authRouter = Router();
