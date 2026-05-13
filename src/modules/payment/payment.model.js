@@ -63,7 +63,6 @@ const paymentSchema = new mongoose.Schema(
   },
 );
 
-paymentSchema.index({ paymentCode: 1 });
 paymentSchema.index({ tableSessionId: 1 });
 paymentSchema.index({ orderId: 1 });
 paymentSchema.index({ paidBy: 1 });

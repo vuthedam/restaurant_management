@@ -54,8 +54,6 @@ const tableSchema = new mongoose.Schema(
   },
 );
 
-tableSchema.index({ code: 1 });
-tableSchema.index({ qrToken: 1 });
 tableSchema.index({ status: 1 });
 
 export default mongoose.model("Table", tableSchema);

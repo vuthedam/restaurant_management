@@ -82,7 +82,6 @@ const menuItemSchema = new mongoose.Schema(
   },
 );
 
-menuItemSchema.index({ slug: 1 });
 menuItemSchema.index({ categoryId: 1 });
 menuItemSchema.index({ status: 1 });
 menuItemSchema.index({ isAvailable: 1 });

@@ -99,7 +99,6 @@ const reservationSchema = new mongoose.Schema(
   },
 );
 
-reservationSchema.index({ reservationCode: 1 });
 reservationSchema.index({ phone: 1 });
 reservationSchema.index({ reservationDate: 1, reservationTime: 1 });
 reservationSchema.index({ status: 1 });

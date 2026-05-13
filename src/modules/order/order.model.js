@@ -92,7 +92,6 @@ const orderSchema = new mongoose.Schema(
   },
 );
 
-orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ tableSessionId: 1 });
 orderSchema.index({ tableId: 1 });
 orderSchema.index({ status: 1 });

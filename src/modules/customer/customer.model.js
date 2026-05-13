@@ -39,7 +39,6 @@ const customerSchema = new mongoose.Schema(
   },
 );
 
-customerSchema.index({ phone: 1 });
 customerSchema.index({ fullName: "text", phone: "text" });
 
 export default mongoose.model("Customer", customerSchema);
