@@ -11,10 +11,15 @@ const app = express();
 
 connectDB();
 
-app.use(cors({
-  origin: configenv.CLIENT_URL,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: [
+      configenv.CLIENT_URL,
+      "https://restaurant-management-fe.netlify.app",
+    ],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
 app.use("/api", router);
@@ -27,5 +32,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 app.listen(configenv.PORT, () => {
-  console.log(`Ứng dụng của bạn đang được khởi động trên cổng ${configenv.PORT}`);
+  console.log(
+    `Ứng dụng của bạn đang được khởi động trên cổng ${configenv.PORT}`,
+  );
 });

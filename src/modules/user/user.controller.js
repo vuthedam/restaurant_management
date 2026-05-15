@@ -30,3 +30,9 @@ export const deleteUser = handleAsync(async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
   res.status(200).json(createResponse(true, 200, "User deleted successfully"));
 });
+
+export const getMe = handleAsync(async (req, res) => {
+  const user = await User.findById(req.user.id);
+  if (!user) return res.status(404).json(createResponse(false, 404, "User not found"));
+  res.status(200).json(createResponse(true, 200, "OK", user));
+});
