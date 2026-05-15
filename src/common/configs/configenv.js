@@ -12,4 +12,5 @@ export const configenv = {
     process.env.MONGODB_URI || "mongodb://localhost:27017/fs25091-nodejs",
   JWT_SECRET: process.env.JWT_SECRET,
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
+  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
 };

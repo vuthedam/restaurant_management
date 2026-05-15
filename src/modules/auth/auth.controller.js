@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import handleAsync from "../../common/utils/handleAsync.js";
 import { configenv } from "../../common/configs/configenv.js";
