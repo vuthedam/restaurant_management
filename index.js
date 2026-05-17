@@ -13,10 +13,7 @@ connectDB();
 
 app.use(
   cors({
-    origin: [
-      configenv.CLIENT_URL,
-      "https://restaurant-management-fe.netlify.app",
-    ],
+    origin: configenv.CLIENT_URL,
     credentials: true,
   }),
 );
