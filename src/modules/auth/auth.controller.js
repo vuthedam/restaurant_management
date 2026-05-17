@@ -63,7 +63,9 @@ export const loginAuth = handleAsync(async (req, res) => {
     {
       id: user._id,
       role: user.role,
-      branch: user.branch,
+      fullName: user.fullName,
+      email: user.email,
+      avatar: user.avatar,
     },
     configenv.JWT_SECRET,
     {

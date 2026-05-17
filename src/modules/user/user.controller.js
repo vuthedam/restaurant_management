@@ -32,7 +32,9 @@ export const deleteUser = handleAsync(async (req, res) => {
 });
 
 export const getMe = handleAsync(async (req, res) => {
-  const user = await User.findById(req.user.id);
+  const userId = req.user?.id || req.user?.userId;
+  const user = await User.findById(userId);
   if (!user) return res.status(404).json(createResponse(false, 404, "User not found"));
+  user.password = undefined;
   res.status(200).json(createResponse(true, 200, "OK", user));
 });
