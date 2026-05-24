@@ -1,5 +1,6 @@
 import { Router } from "express";
 import validBodyRequest from "../../common/utils/validBodyRequest.js";
+import { requireAdmin, requireStaff } from "../../common/middlewares/guards.js";
 import {
   serviceCallCreateSchema,
   serviceCallUpdateSchema,
@@ -16,16 +17,18 @@ const serviceCallRouter = Router();
 
 serviceCallRouter.post(
   "/",
+  ...requireStaff,
   validBodyRequest(serviceCallCreateSchema),
   createServiceCall,
 );
-serviceCallRouter.get("/", getServiceCalls);
-serviceCallRouter.get("/:id", getServiceCallDetail);
+serviceCallRouter.get("/", ...requireStaff, getServiceCalls);
+serviceCallRouter.get("/:id", ...requireStaff, getServiceCallDetail);
 serviceCallRouter.patch(
   "/:id",
+  ...requireStaff,
   validBodyRequest(serviceCallUpdateSchema),
   updateServiceCall,
 );
-serviceCallRouter.delete("/:id", deleteServiceCall);
+serviceCallRouter.delete("/:id", ...requireAdmin, deleteServiceCall);
 
 export default serviceCallRouter;

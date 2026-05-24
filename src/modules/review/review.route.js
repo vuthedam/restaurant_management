@@ -1,5 +1,6 @@
 import { Router } from "express";
 import validBodyRequest from "../../common/utils/validBodyRequest.js";
+import { requireAdmin } from "../../common/middlewares/guards.js";
 import { reviewCreateSchema, reviewUpdateSchema } from "./review.schema.js";
 import {
   createReview,
@@ -11,10 +12,10 @@ import {
 
 const reviewRouter = Router();
 
-reviewRouter.post("/", validBodyRequest(reviewCreateSchema), createReview);
-reviewRouter.get("/", getReviews);
-reviewRouter.get("/:id", getReviewDetail);
-reviewRouter.patch("/:id", validBodyRequest(reviewUpdateSchema), updateReview);
-reviewRouter.delete("/:id", deleteReview);
+reviewRouter.post("/", ...requireAdmin, validBodyRequest(reviewCreateSchema), createReview);
+reviewRouter.get("/", ...requireAdmin, getReviews);
+reviewRouter.get("/:id", ...requireAdmin, getReviewDetail);
+reviewRouter.patch("/:id", ...requireAdmin, validBodyRequest(reviewUpdateSchema), updateReview);
+reviewRouter.delete("/:id", ...requireAdmin, deleteReview);
 
 export default reviewRouter;

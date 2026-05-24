@@ -1,8 +1,9 @@
 import { Router } from "express";
 import validBodyRequest from "../../common/utils/validBodyRequest.js";
-import { orderCreateSchema, orderUpdateSchema } from "./order.schema.js";
+import { staffOrderSchema, orderUpdateSchema } from "./order.schema.js";
+import { requireAdmin, requireStaff } from "../../common/middlewares/guards.js";
 import {
-  createOrder,
+  staffCreateOrder,
   deleteOrder,
   getOrderDetail,
   getOrders,
@@ -11,10 +12,13 @@ import {
 
 const orderRouter = Router();
 
-orderRouter.post("/", validBodyRequest(orderCreateSchema), createOrder);
-orderRouter.get("/", getOrders);
-orderRouter.get("/:id", getOrderDetail);
-orderRouter.patch("/:id", validBodyRequest(orderUpdateSchema), updateOrder);
-orderRouter.delete("/:id", deleteOrder);
+// Staff và admin đều tạo được order hộ khách
+orderRouter.post("/", ...requireStaff, validBodyRequest(staffOrderSchema), staffCreateOrder);
+
+// Admin thấy tất cả đơn, staff chỉ thấy đơn của mình (filter trong controller)
+orderRouter.get("/", ...requireStaff, getOrders);
+orderRouter.get("/:id", ...requireStaff, getOrderDetail);
+orderRouter.patch("/:id", ...requireStaff, validBodyRequest(orderUpdateSchema), updateOrder);
+orderRouter.delete("/:id", ...requireAdmin, deleteOrder);
 
 export default orderRouter;

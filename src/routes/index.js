@@ -13,9 +13,11 @@ import paymentRouter from "../modules/payment/payment.route.js";
 import serviceCallRouter from "../modules/serviceCall/serviceCall.route.js";
 import reviewRouter from "../modules/review/review.route.js";
 import activityLogRouter from "../modules/activityLog/activityLog.route.js";
+import guestRouter from "../modules/guest/guest.route.js";
 
 const router = Router();
 
+router.use("/public", guestRouter);
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
 router.use("/categories", categoryRouter);

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import validBodyRequest from "../../common/utils/validBodyRequest.js";
 import { userCreateSchema, userUpdateSchema } from "./user.schema.js";
-import authenticate from "../../common/middlewares/authenticate.js";
+import { requireAdmin, requireStaff, authenticate } from "../../common/middlewares/guards.js";
 import {
   createUser,
   deleteUser,
@@ -14,10 +14,10 @@ import {
 const userRouter = Router();
 
 userRouter.get("/me", authenticate, getMe);
-userRouter.post("/", validBodyRequest(userCreateSchema), createUser);
-userRouter.get("/", getUsers);
-userRouter.get("/:id", getUserDetail);
-userRouter.patch("/:id", validBodyRequest(userUpdateSchema), updateUser);
-userRouter.delete("/:id", deleteUser);
+userRouter.post("/", ...requireAdmin, validBodyRequest(userCreateSchema), createUser);
+userRouter.get("/", ...requireAdmin, getUsers);
+userRouter.get("/:id", ...requireAdmin, getUserDetail);
+userRouter.patch("/:id", ...requireAdmin, validBodyRequest(userUpdateSchema), updateUser);
+userRouter.delete("/:id", ...requireAdmin, deleteUser);
 
 export default userRouter;

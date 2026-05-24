@@ -6,7 +6,6 @@ export const tableSessionCreateSchema = z.object({
   tableId: objectIdSchema,
   reservationId: objectIdSchema.optional().nullable(),
   customerId: objectIdSchema.optional().nullable(),
-  createdBy: objectIdSchema,
   customerName: z.string().trim().max(100).optional().nullable(),
   guestCount: z.number().int().min(1).max(30).optional(),
   status: z

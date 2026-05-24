@@ -1,5 +1,6 @@
 import { Router } from "express";
 import validBodyRequest from "../../common/utils/validBodyRequest.js";
+import { requireAdmin } from "../../common/middlewares/guards.js";
 import {
   menuItemCreateSchema,
   menuItemUpdateSchema,
@@ -14,14 +15,15 @@ import {
 
 const menuItemRouter = Router();
 
-menuItemRouter.post("/", validBodyRequest(menuItemCreateSchema), createMenuItem);
 menuItemRouter.get("/", getMenuItems);
 menuItemRouter.get("/:id", getMenuItemDetail);
+menuItemRouter.post("/", ...requireAdmin, validBodyRequest(menuItemCreateSchema), createMenuItem);
 menuItemRouter.patch(
   "/:id",
+  ...requireAdmin,
   validBodyRequest(menuItemUpdateSchema),
   updateMenuItem,
 );
-menuItemRouter.delete("/:id", deleteMenuItem);
+menuItemRouter.delete("/:id", ...requireAdmin, deleteMenuItem);
 
 export default menuItemRouter;

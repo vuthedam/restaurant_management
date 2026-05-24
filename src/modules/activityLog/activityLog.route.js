@@ -1,5 +1,6 @@
 import { Router } from "express";
 import validBodyRequest from "../../common/utils/validBodyRequest.js";
+import { requireAdmin } from "../../common/middlewares/guards.js";
 import {
   activityLogCreateSchema,
   activityLogUpdateSchema,
@@ -16,16 +17,18 @@ const activityLogRouter = Router();
 
 activityLogRouter.post(
   "/",
+  ...requireAdmin,
   validBodyRequest(activityLogCreateSchema),
   createActivityLog,
 );
-activityLogRouter.get("/", getActivityLogs);
-activityLogRouter.get("/:id", getActivityLogDetail);
+activityLogRouter.get("/", ...requireAdmin, getActivityLogs);
+activityLogRouter.get("/:id", ...requireAdmin, getActivityLogDetail);
 activityLogRouter.patch(
   "/:id",
+  ...requireAdmin,
   validBodyRequest(activityLogUpdateSchema),
   updateActivityLog,
 );
-activityLogRouter.delete("/:id", deleteActivityLog);
+activityLogRouter.delete("/:id", ...requireAdmin, deleteActivityLog);
 
 export default activityLogRouter;

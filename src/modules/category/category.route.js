@@ -1,5 +1,6 @@
 import { Router } from "express";
 import validBodyRequest from "../../common/utils/validBodyRequest.js";
+import { requireAdmin } from "../../common/middlewares/guards.js";
 import {
   categoryCreateSchema,
   categoryUpdateSchema,
@@ -14,14 +15,15 @@ import {
 
 const categoryRouter = Router();
 
-categoryRouter.post("/", validBodyRequest(categoryCreateSchema), createCategory);
 categoryRouter.get("/", getCategories);
 categoryRouter.get("/:id", getCategoryDetail);
+categoryRouter.post("/", ...requireAdmin, validBodyRequest(categoryCreateSchema), createCategory);
 categoryRouter.patch(
   "/:id",
+  ...requireAdmin,
   validBodyRequest(categoryUpdateSchema),
   updateCategory,
 );
-categoryRouter.delete("/:id", deleteCategory);
+categoryRouter.delete("/:id", ...requireAdmin, deleteCategory);
 
 export default categoryRouter;

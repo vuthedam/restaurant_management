@@ -1,5 +1,6 @@
 import { Router } from "express";
 import validBodyRequest from "../../common/utils/validBodyRequest.js";
+import { requireAdmin } from "../../common/middlewares/guards.js";
 import {
   customerCreateSchema,
   customerUpdateSchema,
@@ -14,14 +15,15 @@ import {
 
 const customerRouter = Router();
 
-customerRouter.post("/", validBodyRequest(customerCreateSchema), createCustomer);
-customerRouter.get("/", getCustomers);
-customerRouter.get("/:id", getCustomerDetail);
+customerRouter.post("/", ...requireAdmin, validBodyRequest(customerCreateSchema), createCustomer);
+customerRouter.get("/", ...requireAdmin, getCustomers);
+customerRouter.get("/:id", ...requireAdmin, getCustomerDetail);
 customerRouter.patch(
   "/:id",
+  ...requireAdmin,
   validBodyRequest(customerUpdateSchema),
   updateCustomer,
 );
-customerRouter.delete("/:id", deleteCustomer);
+customerRouter.delete("/:id", ...requireAdmin, deleteCustomer);
 
 export default customerRouter;

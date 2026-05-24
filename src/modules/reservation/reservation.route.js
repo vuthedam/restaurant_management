@@ -1,5 +1,6 @@
 import { Router } from "express";
 import validBodyRequest from "../../common/utils/validBodyRequest.js";
+import { requireAdmin, requireStaff } from "../../common/middlewares/guards.js";
 import {
   reservationCreateSchema,
   reservationUpdateSchema,
@@ -16,16 +17,18 @@ const reservationRouter = Router();
 
 reservationRouter.post(
   "/",
+  ...requireStaff,
   validBodyRequest(reservationCreateSchema),
   createReservation,
 );
-reservationRouter.get("/", getReservations);
-reservationRouter.get("/:id", getReservationDetail);
+reservationRouter.get("/", ...requireStaff, getReservations);
+reservationRouter.get("/:id", ...requireStaff, getReservationDetail);
 reservationRouter.patch(
   "/:id",
+  ...requireStaff,
   validBodyRequest(reservationUpdateSchema),
   updateReservation,
 );
-reservationRouter.delete("/:id", deleteReservation);
+reservationRouter.delete("/:id", ...requireAdmin, deleteReservation);
 
 export default reservationRouter;

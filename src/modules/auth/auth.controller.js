@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import handleAsync from "../../common/utils/handleAsync.js";
 import { configenv } from "../../common/configs/configenv.js";
+import { USER_ROLES } from "../../common/constants/user-role.enum.js";
 import { User } from "../user/user.model.js";
 
 export const registerAuth = handleAsync(async (req, res) => {
@@ -19,6 +20,7 @@ export const registerAuth = handleAsync(async (req, res) => {
     password,
     fullName,
     phone,
+    role: USER_ROLES.STAFF,
   });
   newUser.password = undefined;
   res.status(201).json({
