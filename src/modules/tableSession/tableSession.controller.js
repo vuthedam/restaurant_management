@@ -10,7 +10,16 @@ export const createTableSession = handleAsync(async (req, res) => {
     ...req.body,
     createdBy: req.user.id, // lấy từ token, không cần client gửi
   });
-  res.status(201).json(createResponse(true, 201, "Table session created successfully", tableSession));
+  res
+    .status(201)
+    .json(
+      createResponse(
+        true,
+        201,
+        "Table session created successfully",
+        tableSession,
+      ),
+    );
 });
 
 export const getTableSessions = handleAsync(async (req, res) => {
@@ -24,7 +33,16 @@ export const getTableSessions = handleAsync(async (req, res) => {
     .populate("createdBy", "fullName email")
     .sort({ startedAt: -1 });
 
-  res.status(200).json(createResponse(true, 200, "Table sessions retrieved successfully", tableSessions));
+  res
+    .status(200)
+    .json(
+      createResponse(
+        true,
+        200,
+        "Table sessions retrieved successfully",
+        tableSessions,
+      ),
+    );
 });
 
 export const getTableSessionDetail = handleAsync(async (req, res) => {
@@ -34,13 +52,35 @@ export const getTableSessionDetail = handleAsync(async (req, res) => {
 
   if (!tableSession) throw createError(404, "Table session not found");
 
-  res.status(200).json(createResponse(true, 200, "Table session retrieved successfully", tableSession));
+  res
+    .status(200)
+    .json(
+      createResponse(
+        true,
+        200,
+        "Table session retrieved successfully",
+        tableSession,
+      ),
+    );
 });
 
 export const updateTableSession = handleAsync(async (req, res) => {
-  const tableSession = await TableSession.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const tableSession = await TableSession.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true },
+  );
   if (!tableSession) throw createError(404, "Table session not found");
-  res.status(200).json(createResponse(true, 200, "Table session updated successfully", tableSession));
+  res
+    .status(200)
+    .json(
+      createResponse(
+        true,
+        200,
+        "Table session updated successfully",
+        tableSession,
+      ),
+    );
 });
 
 export const transferTableSession = handleAsync(async (req, res) => {
@@ -51,7 +91,8 @@ export const transferTableSession = handleAsync(async (req, res) => {
 
   const session = await TableSession.findById(id);
   if (!session) throw createError(404, "Không tìm thấy phiên hoạt động");
-  if (session.status !== "active") throw createError(400, "Phiên hoạt động này không còn hiệu lực");
+  if (session.status !== "active")
+    throw createError(400, "Phiên hoạt động này không còn hiệu lực");
 
   const oldTableId = session.tableId;
   if (String(oldTableId) === String(targetTableId)) {
@@ -61,7 +102,10 @@ export const transferTableSession = handleAsync(async (req, res) => {
   const targetTable = await Table.findById(targetTableId);
   if (!targetTable) throw createError(404, "Không tìm thấy bàn đích");
   if (targetTable.status !== "available") {
-    throw createError(400, `Bàn đích ${targetTable.code || targetTable.name} đang không trống`);
+    throw createError(
+      400,
+      `Bàn đích ${targetTable.code || targetTable.name} đang không trống`,
+    );
   }
 
   // 1. Update TableSession table ID
@@ -82,13 +126,22 @@ export const transferTableSession = handleAsync(async (req, res) => {
   // 4. Update tableId in all non-completed orders for this session
   await Order.updateMany(
     { tableSessionId: session._id, status: { $ne: "completed" } },
-    { tableId: targetTableId }
+    { tableId: targetTableId },
   );
 
-  res.status(200).json(createResponse(true, 200, "Chuyển bàn thành công", session));
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Chuyển bàn thành công", session));
 });
 
 export const deleteTableSession = handleAsync(async (req, res) => {
-  await TableSession.findByIdAndDelete(req.params.id);
-  res.status(200).json(createResponse(true, 200, "Table session deleted successfully"));
+  const tableSession = await TableSession.findByIdAndDelete(req.params.id);
+  if (!tableSession) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Table session not found"));
+  }
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Table session deleted successfully"));
 });

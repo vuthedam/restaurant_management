@@ -93,4 +93,64 @@ export const loginAuth = handleAsync(async (req, res) => {
   });
 });
 
-// refreshToken...
+export const refreshTokenAuth = handleAsync(async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({
+      success: false,
+      statusCode: 400,
+      message: "Refresh token is required",
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, configenv.JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded.userId);
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        statusCode: 401,
+        message: "Refresh token invalid or expired",
+      });
+    }
+
+    const accessToken = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+        fullName: user.fullName,
+        email: user.email,
+        avatar: user.avatar,
+      },
+      configenv.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      },
+    );
+
+    const newRefreshToken = jwt.sign(
+      { userId: user._id },
+      configenv.JWT_REFRESH_SECRET,
+      {
+        expiresIn: "15d",
+      },
+    );
+
+    user.password = undefined;
+
+    res.status(200).json({
+      success: true,
+      statusCode: 200,
+      message: "Refresh token success",
+      data: { accessToken, refreshToken: newRefreshToken },
+    });
+  } catch (err) {
+    return res.status(401).json({
+      success: false,
+      statusCode: 401,
+      message: "Refresh token invalid or expired",
+    });
+  }
+});

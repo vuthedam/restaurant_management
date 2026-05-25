@@ -9,7 +9,14 @@ export const createReservation = handleAsync(async (req, res) => {
   const reservation = await Reservation.create(req.body);
   res
     .status(201)
-    .json(createResponse(true, 201, "Reservation created successfully", reservation));
+    .json(
+      createResponse(
+        true,
+        201,
+        "Reservation created successfully",
+        reservation,
+      ),
+    );
 });
 
 export const getReservations = handleAsync(async (req, res) => {
@@ -19,7 +26,12 @@ export const getReservations = handleAsync(async (req, res) => {
   res
     .status(200)
     .json(
-      createResponse(true, 200, "Reservations retrieved successfully", reservations),
+      createResponse(
+        true,
+        200,
+        "Reservations retrieved successfully",
+        reservations,
+      ),
     );
 });
 
@@ -33,7 +45,12 @@ export const getReservationDetail = handleAsync(async (req, res) => {
   res
     .status(200)
     .json(
-      createResponse(true, 200, "Reservation retrieved successfully", reservation),
+      createResponse(
+        true,
+        200,
+        "Reservation retrieved successfully",
+        reservation,
+      ),
     );
 });
 
@@ -56,7 +73,9 @@ export const updateReservation = handleAsync(async (req, res) => {
     if (newStatus === "confirmed") {
       // If table is assigned, mark table as reserved
       if (reservation.assignedTableId) {
-        await Table.findByIdAndUpdate(reservation.assignedTableId, { status: "reserved" });
+        await Table.findByIdAndUpdate(reservation.assignedTableId, {
+          status: "reserved",
+        });
       }
     } else if (newStatus === "checked_in") {
       // Must have an assigned table to check in
@@ -68,11 +87,17 @@ export const updateReservation = handleAsync(async (req, res) => {
       const table = await Table.findById(reservation.assignedTableId);
       if (!table) throw createError(404, "Bàn được gán không tồn tại");
       if (table.status === "occupied" && table.status !== "reserved") {
-        throw createError(400, `Bàn ${table.code || table.name} đang được sử dụng bởi khách khác`);
+        throw createError(
+          400,
+          `Bàn ${table.code || table.name} đang được sử dụng bởi khách khác`,
+        );
       }
 
       // Create active TableSession
-      let session = await TableSession.findOne({ reservationId: reservation._id, status: "active" });
+      let session = await TableSession.findOne({
+        reservationId: reservation._id,
+        status: "active",
+      });
       if (!session) {
         session = await TableSession.create({
           tableId: reservation.assignedTableId,
@@ -91,12 +116,15 @@ export const updateReservation = handleAsync(async (req, res) => {
       // Release table if it was reserved
       if (reservation.assignedTableId) {
         const table = await Table.findById(reservation.assignedTableId);
-        if (table && (table.status === "reserved" || table.status === "occupied")) {
+        if (
+          table &&
+          (table.status === "reserved" || table.status === "occupied")
+        ) {
           // Check if there is any other active session on this table before freeing it
           const otherSession = await TableSession.findOne({
             tableId: table._id,
             status: "active",
-            reservationId: { $ne: reservation._id }
+            reservationId: { $ne: reservation._id },
           });
           if (!otherSession) {
             table.status = "available";
@@ -106,7 +134,10 @@ export const updateReservation = handleAsync(async (req, res) => {
       }
 
       // Cancel associated active session if exists
-      const session = await TableSession.findOne({ reservationId: reservation._id, status: "active" });
+      const session = await TableSession.findOne({
+        reservationId: reservation._id,
+        status: "active",
+      });
       if (session) {
         session.status = "cancelled";
         session.endedAt = new Date();
@@ -116,16 +147,23 @@ export const updateReservation = handleAsync(async (req, res) => {
   }
 
   // If table is changed during update
-  if (updates.assignedTableId !== undefined && String(updates.assignedTableId) !== String(oldTableId)) {
+  if (
+    updates.assignedTableId !== undefined &&
+    String(updates.assignedTableId) !== String(oldTableId)
+  ) {
     // If it was reserved or checked in, free the old table
-    if (oldTableId && (reservation.status === "confirmed" || reservation.status === "checked_in")) {
+    if (
+      oldTableId &&
+      (reservation.status === "confirmed" ||
+        reservation.status === "checked_in")
+    ) {
       const oldTable = await Table.findById(oldTableId);
       if (oldTable) {
         // Only free if no other active sessions are on it
         const otherSession = await TableSession.findOne({
           tableId: oldTable._id,
           status: "active",
-          reservationId: { $ne: reservation._id }
+          reservationId: { $ne: reservation._id },
         });
         if (!otherSession) {
           oldTable.status = "available";
@@ -147,7 +185,7 @@ export const updateReservation = handleAsync(async (req, res) => {
           // Update active session table ID
           await TableSession.findOneAndUpdate(
             { reservationId: reservation._id, status: "active" },
-            { tableId: updates.assignedTableId }
+            { tableId: updates.assignedTableId },
           );
         }
       }
@@ -156,16 +194,25 @@ export const updateReservation = handleAsync(async (req, res) => {
 
   await reservation.save();
 
-  const populated = await Reservation.findById(reservation._id)
-    .populate("assignedTableId", "code name capacity");
+  const populated = await Reservation.findById(reservation._id).populate(
+    "assignedTableId",
+    "code name capacity",
+  );
 
   res
     .status(200)
-    .json(createResponse(true, 200, "Reservation updated successfully", populated));
+    .json(
+      createResponse(true, 200, "Reservation updated successfully", populated),
+    );
 });
 
 export const deleteReservation = handleAsync(async (req, res) => {
-  await Reservation.findByIdAndDelete(req.params.id);
+  const reservation = await Reservation.findByIdAndDelete(req.params.id);
+  if (!reservation) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Reservation not found"));
+  }
   res
     .status(200)
     .json(createResponse(true, 200, "Reservation deleted successfully"));

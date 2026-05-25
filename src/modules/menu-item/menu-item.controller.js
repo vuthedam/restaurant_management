@@ -6,7 +6,9 @@ export const createMenuItem = handleAsync(async (req, res) => {
   const menuItem = await MenuItem.create(req.body);
   res
     .status(201)
-    .json(createResponse(true, 201, "Menu item created successfully", menuItem));
+    .json(
+      createResponse(true, 201, "Menu item created successfully", menuItem),
+    );
 });
 
 export const getMenuItems = handleAsync(async (req, res) => {
@@ -27,20 +29,34 @@ export const getMenuItemDetail = handleAsync(async (req, res) => {
   }
   res
     .status(200)
-    .json(createResponse(true, 200, "Menu item retrieved successfully", menuItem));
+    .json(
+      createResponse(true, 200, "Menu item retrieved successfully", menuItem),
+    );
 });
 
 export const updateMenuItem = handleAsync(async (req, res) => {
   const menuItem = await MenuItem.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
   });
+  if (!menuItem) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Menu item not found"));
+  }
   res
     .status(200)
-    .json(createResponse(true, 200, "Menu item updated successfully", menuItem));
+    .json(
+      createResponse(true, 200, "Menu item updated successfully", menuItem),
+    );
 });
 
 export const deleteMenuItem = handleAsync(async (req, res) => {
-  await MenuItem.findByIdAndDelete(req.params.id);
+  const menuItem = await MenuItem.findByIdAndDelete(req.params.id);
+  if (!menuItem) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Menu item not found"));
+  }
   res
     .status(200)
     .json(createResponse(true, 200, "Menu item deleted successfully"));

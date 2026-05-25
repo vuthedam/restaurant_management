@@ -27,20 +27,32 @@ export const getCustomerDetail = handleAsync(async (req, res) => {
   }
   res
     .status(200)
-    .json(createResponse(true, 200, "Customer retrieved successfully", customer));
+    .json(
+      createResponse(true, 200, "Customer retrieved successfully", customer),
+    );
 });
 
 export const updateCustomer = handleAsync(async (req, res) => {
   const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
   });
+  if (!customer) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Customer not found"));
+  }
   res
     .status(200)
     .json(createResponse(true, 200, "Customer updated successfully", customer));
 });
 
 export const deleteCustomer = handleAsync(async (req, res) => {
-  await Customer.findByIdAndDelete(req.params.id);
+  const customer = await Customer.findByIdAndDelete(req.params.id);
+  if (!customer) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Customer not found"));
+  }
   res
     .status(200)
     .json(createResponse(true, 200, "Customer deleted successfully"));

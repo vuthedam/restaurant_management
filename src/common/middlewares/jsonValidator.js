@@ -1,4 +1,7 @@
 const jsonValidator = (req, res, next) => {
+  const bodyMethods = ["POST", "PUT", "PATCH"];
+  if (!bodyMethods.includes(req.method)) return next();
+
   if (!req.is("application/json")) {
     return res.status(400).json({
       success: false,
@@ -6,6 +9,7 @@ const jsonValidator = (req, res, next) => {
       message: "Invalid JSON format",
     });
   }
+
   next();
 };
 

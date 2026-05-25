@@ -4,7 +4,9 @@ import Review from "./review.model.js";
 
 export const createReview = handleAsync(async (req, res) => {
   const review = await Review.create(req.body);
-  res.status(201).json(createResponse(true, 201, "Review created successfully", review));
+  res
+    .status(201)
+    .json(createResponse(true, 201, "Review created successfully", review));
 });
 
 export const getReviews = handleAsync(async (req, res) => {
@@ -19,15 +21,29 @@ export const getReviewDetail = handleAsync(async (req, res) => {
   if (!review) {
     return res.status(404).json(createResponse(false, 404, "Review not found"));
   }
-  res.status(200).json(createResponse(true, 200, "Review retrieved successfully", review));
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Review retrieved successfully", review));
 });
 
 export const updateReview = handleAsync(async (req, res) => {
-  const review = await Review.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.status(200).json(createResponse(true, 200, "Review updated successfully", review));
+  const review = await Review.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  });
+  if (!review) {
+    return res.status(404).json(createResponse(false, 404, "Review not found"));
+  }
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Review updated successfully", review));
 });
 
 export const deleteReview = handleAsync(async (req, res) => {
-  await Review.findByIdAndDelete(req.params.id);
-  res.status(200).json(createResponse(true, 200, "Review deleted successfully"));
+  const review = await Review.findByIdAndDelete(req.params.id);
+  if (!review) {
+    return res.status(404).json(createResponse(false, 404, "Review not found"));
+  }
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Review deleted successfully"));
 });

@@ -17,24 +17,45 @@ async function generateOrderNumber() {
 
 // POST /orders/staff  — staff/admin order hộ khách
 export const staffCreateOrder = handleAsync(async (req, res) => {
-  const { tableId, items, note, discount = 0, customerName, guestCount } = req.body;
+  const {
+    tableId,
+    items,
+    note,
+    discount = 0,
+    customerName,
+    guestCount,
+  } = req.body;
 
   if (!items?.length) throw createError(400, "Cần ít nhất 1 món");
 
   // Lấy thông tin menu items
   const menuItemIds = items.map((i) => i.menuItemId);
-  const menuItems = await MenuItem.find({ _id: { $in: menuItemIds }, status: "active", isAvailable: true });
+  const menuItems = await MenuItem.find({
+    _id: { $in: menuItemIds },
+    status: "active",
+    isAvailable: true,
+  });
 
   if (menuItems.length !== menuItemIds.length)
     throw createError(400, "Một số món không tồn tại hoặc không khả dụng");
 
-  const menuMap = Object.fromEntries(menuItems.map((m) => [m._id.toString(), m]));
+  const menuMap = Object.fromEntries(
+    menuItems.map((m) => [m._id.toString(), m]),
+  );
 
   // Tính tiền
   const orderItemsData = items.map((i) => {
     const menu = menuMap[i.menuItemId];
     const price = menu.salePrice ?? menu.price;
-    return { menuItemId: menu._id, name: menu.name, image: menu.image, price, quantity: i.quantity, subtotal: price * i.quantity, note: i.note ?? null };
+    return {
+      menuItemId: menu._id,
+      name: menu.name,
+      image: menu.image,
+      price,
+      quantity: i.quantity,
+      subtotal: price * i.quantity,
+      note: i.note ?? null,
+    };
   });
 
   const subtotal = orderItemsData.reduce((s, i) => s + i.subtotal, 0);
@@ -69,10 +90,21 @@ export const staffCreateOrder = handleAsync(async (req, res) => {
 
   // Tạo order items
   const createdItems = await OrderItem.insertMany(
-    orderItemsData.map((i) => ({ ...i, orderId: order._id, status: "pending" }))
+    orderItemsData.map((i) => ({
+      ...i,
+      orderId: order._id,
+      status: "pending",
+    })),
   );
 
-  res.status(201).json(createResponse(true, 201, "Tạo đơn hàng thành công", { order, items: createdItems }));
+  res
+    .status(201)
+    .json(
+      createResponse(true, 201, "Tạo đơn hàng thành công", {
+        order,
+        items: createdItems,
+      }),
+    );
 });
 
 // GET /orders  — admin và staff thấy tất cả các đơn
@@ -91,7 +123,9 @@ export const getOrders = handleAsync(async (req, res) => {
     .skip(skip)
     .limit(Number(limit));
 
-  res.status(200).json(createResponse(true, 200, "Orders retrieved successfully", orders));
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Orders retrieved successfully", orders));
 });
 
 export const getOrderDetail = handleAsync(async (req, res) => {
@@ -102,18 +136,35 @@ export const getOrderDetail = handleAsync(async (req, res) => {
 
   if (!order) throw createError(404, "Order not found");
 
-  const items = await OrderItem.find({ orderId: order._id }).populate("menuItemId", "name price image");
+  const items = await OrderItem.find({ orderId: order._id }).populate(
+    "menuItemId",
+    "name price image",
+  );
 
-  res.status(200).json(createResponse(true, 200, "Order retrieved successfully", { order, items }));
+  res
+    .status(200)
+    .json(
+      createResponse(true, 200, "Order retrieved successfully", {
+        order,
+        items,
+      }),
+    );
 });
 
 export const updateOrder = handleAsync(async (req, res) => {
-  const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const order = await Order.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  });
   if (!order) throw createError(404, "Order not found");
-  res.status(200).json(createResponse(true, 200, "Order updated successfully", order));
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Order updated successfully", order));
 });
 
 export const deleteOrder = handleAsync(async (req, res) => {
-  await Order.findByIdAndDelete(req.params.id);
+  const order = await Order.findByIdAndDelete(req.params.id);
+  if (!order) {
+    return res.status(404).json(createResponse(false, 404, "Order not found"));
+  }
   res.status(200).json(createResponse(true, 200, "Order deleted successfully"));
 });

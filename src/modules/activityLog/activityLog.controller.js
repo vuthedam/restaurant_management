@@ -7,7 +7,12 @@ export const createActivityLog = handleAsync(async (req, res) => {
   res
     .status(201)
     .json(
-      createResponse(true, 201, "Activity log created successfully", activityLog),
+      createResponse(
+        true,
+        201,
+        "Activity log created successfully",
+        activityLog,
+      ),
     );
 });
 
@@ -45,18 +50,37 @@ export const getActivityLogDetail = handleAsync(async (req, res) => {
 });
 
 export const updateActivityLog = handleAsync(async (req, res) => {
-  const activityLog = await ActivityLog.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-  });
+  const activityLog = await ActivityLog.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    {
+      new: true,
+    },
+  );
+  if (!activityLog) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Activity log not found"));
+  }
   res
     .status(200)
     .json(
-      createResponse(true, 200, "Activity log updated successfully", activityLog),
+      createResponse(
+        true,
+        200,
+        "Activity log updated successfully",
+        activityLog,
+      ),
     );
 });
 
 export const deleteActivityLog = handleAsync(async (req, res) => {
-  await ActivityLog.findByIdAndDelete(req.params.id);
+  const activityLog = await ActivityLog.findByIdAndDelete(req.params.id);
+  if (!activityLog) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Activity log not found"));
+  }
   res
     .status(200)
     .json(createResponse(true, 200, "Activity log deleted successfully"));

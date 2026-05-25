@@ -19,7 +19,11 @@ async function countWorkDaysThisMonth(userId) {
     {
       $group: {
         _id: {
-          $dateToString: { format: "%Y-%m-%d", date: "$startedAt", timezone: "UTC" },
+          $dateToString: {
+            format: "%Y-%m-%d",
+            date: "$startedAt",
+            timezone: "UTC",
+          },
         },
       },
     },
@@ -32,12 +36,16 @@ async function countWorkDaysThisMonth(userId) {
 export const createUser = handleAsync(async (req, res) => {
   const user = await User.create(req.body);
   user.password = undefined;
-  res.status(201).json(createResponse(true, 201, "User created successfully", user));
+  res
+    .status(201)
+    .json(createResponse(true, 201, "User created successfully", user));
 });
 
 export const getUsers = handleAsync(async (req, res) => {
   const users = await User.find();
-  res.status(200).json(createResponse(true, 200, "Users retrieved successfully", users));
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Users retrieved successfully", users));
 });
 
 export const getUserDetail = handleAsync(async (req, res) => {
@@ -50,23 +58,36 @@ export const getUserDetail = handleAsync(async (req, res) => {
   const userObject = user.toObject();
   userObject.workDaysThisMonth = workDaysThisMonth;
 
-  res.status(200).json(createResponse(true, 200, "User retrieved successfully", userObject));
+  res
+    .status(200)
+    .json(createResponse(true, 200, "User retrieved successfully", userObject));
 });
 
 export const updateUser = handleAsync(async (req, res) => {
-  const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.status(200).json(createResponse(true, 200, "User updated successfully", user));
+  const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  });
+  if (!user) {
+    return res.status(404).json(createResponse(false, 404, "User not found"));
+  }
+  res
+    .status(200)
+    .json(createResponse(true, 200, "User updated successfully", user));
 });
 
 export const deleteUser = handleAsync(async (req, res) => {
-  await User.findByIdAndDelete(req.params.id);
+  const user = await User.findByIdAndDelete(req.params.id);
+  if (!user) {
+    return res.status(404).json(createResponse(false, 404, "User not found"));
+  }
   res.status(200).json(createResponse(true, 200, "User deleted successfully"));
 });
 
 export const getMe = handleAsync(async (req, res) => {
   const userId = req.user?.id || req.user?.userId;
   const user = await User.findById(userId);
-  if (!user) return res.status(404).json(createResponse(false, 404, "User not found"));
+  if (!user)
+    return res.status(404).json(createResponse(false, 404, "User not found"));
 
   const workDaysThisMonth = await countWorkDaysThisMonth(user._id);
   const userObject = user.toObject();

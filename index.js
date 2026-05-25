@@ -16,16 +16,17 @@ app.use(
   }),
 );
 app.use(express.json());
-
+app.use(jsonValidator);
 app.use("/api", router);
 
-app.use(jsonValidator);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
 async function startServer() {
-  if (!configenv.JWT_SECRET) {
-    console.error("JWT_SECRET chưa được cấu hình trong .env");
+  if (!configenv.JWT_SECRET || !configenv.JWT_REFRESH_SECRET) {
+    console.error(
+      "JWT_SECRET và JWT_REFRESH_SECRET phải được cấu hình trong .env",
+    );
     process.exit(1);
   }
 

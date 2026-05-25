@@ -7,7 +7,12 @@ export const createServiceCall = handleAsync(async (req, res) => {
   res
     .status(201)
     .json(
-      createResponse(true, 201, "Service call created successfully", serviceCall),
+      createResponse(
+        true,
+        201,
+        "Service call created successfully",
+        serviceCall,
+      ),
     );
 });
 
@@ -35,23 +40,47 @@ export const getServiceCallDetail = handleAsync(async (req, res) => {
   res
     .status(200)
     .json(
-      createResponse(true, 200, "Service call retrieved successfully", serviceCall),
+      createResponse(
+        true,
+        200,
+        "Service call retrieved successfully",
+        serviceCall,
+      ),
     );
 });
 
 export const updateServiceCall = handleAsync(async (req, res) => {
-  const serviceCall = await ServiceCall.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-  });
+  const serviceCall = await ServiceCall.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    {
+      new: true,
+    },
+  );
+  if (!serviceCall) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Service call not found"));
+  }
   res
     .status(200)
     .json(
-      createResponse(true, 200, "Service call updated successfully", serviceCall),
+      createResponse(
+        true,
+        200,
+        "Service call updated successfully",
+        serviceCall,
+      ),
     );
 });
 
 export const deleteServiceCall = handleAsync(async (req, res) => {
-  await ServiceCall.findByIdAndDelete(req.params.id);
+  const serviceCall = await ServiceCall.findByIdAndDelete(req.params.id);
+  if (!serviceCall) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Service call not found"));
+  }
   res
     .status(200)
     .json(createResponse(true, 200, "Service call deleted successfully"));

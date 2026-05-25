@@ -14,7 +14,12 @@ export const getCategories = handleAsync(async (req, res) => {
   res
     .status(200)
     .json(
-      createResponse(true, 200, "Categories retrieved successfully", categories),
+      createResponse(
+        true,
+        200,
+        "Categories retrieved successfully",
+        categories,
+      ),
     );
 });
 
@@ -27,20 +32,32 @@ export const getCategoryDetail = handleAsync(async (req, res) => {
   }
   res
     .status(200)
-    .json(createResponse(true, 200, "Category retrieved successfully", category));
+    .json(
+      createResponse(true, 200, "Category retrieved successfully", category),
+    );
 });
 
 export const updateCategory = handleAsync(async (req, res) => {
   const category = await Category.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
   });
+  if (!category) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Category not found"));
+  }
   res
     .status(200)
     .json(createResponse(true, 200, "Category updated successfully", category));
 });
 
 export const deleteCategory = handleAsync(async (req, res) => {
-  await Category.findByIdAndDelete(req.params.id);
+  const category = await Category.findByIdAndDelete(req.params.id);
+  if (!category) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Category not found"));
+  }
   res
     .status(200)
     .json(createResponse(true, 200, "Category deleted successfully"));

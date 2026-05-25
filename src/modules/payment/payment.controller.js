@@ -17,7 +17,8 @@ export const createPayment = handleAsync(async (req, res) => {
 
   const session = await TableSession.findById(tableSessionId);
   if (!session) throw createError(404, "Không tìm thấy phiên bàn");
-  if (session.status === "paid") throw createError(400, "Phiên này đã được thanh toán");
+  if (session.status === "paid")
+    throw createError(400, "Phiên này đã được thanh toán");
 
   // Tính tổng tiền từ tất cả orders của session
   const orders = await Order.find({
@@ -25,7 +26,10 @@ export const createPayment = handleAsync(async (req, res) => {
     status: { $ne: "cancelled" },
   });
 
-  const subtotal = orders.reduce((s, o) => s + (o.finalAmount ?? o.subtotal ?? 0), 0);
+  const subtotal = orders.reduce(
+    (s, o) => s + (o.finalAmount ?? o.subtotal ?? 0),
+    0,
+  );
   const amount = Math.max(0, subtotal - discount);
 
   // Xóa payment pending cũ nếu có (tạo lại)
@@ -42,16 +46,21 @@ export const createPayment = handleAsync(async (req, res) => {
 
   // Cập nhật bàn sang waiting_payment
   await Table.findByIdAndUpdate(session.tableId, { status: "waiting_payment" });
-  await TableSession.findByIdAndUpdate(tableSessionId, { status: "waiting_payment" });
+  await TableSession.findByIdAndUpdate(tableSessionId, {
+    status: "waiting_payment",
+  });
 
-  res.status(201).json(createResponse(true, 201, "Tạo giao dịch thành công", payment));
+  res
+    .status(201)
+    .json(createResponse(true, 201, "Tạo giao dịch thành công", payment));
 });
 
 // POST /payments/:id/confirm  — xác nhận thanh toán thành công → reset bàn
 export const confirmPayment = handleAsync(async (req, res) => {
   const payment = await Payment.findById(req.params.id);
   if (!payment) throw createError(404, "Không tìm thấy giao dịch");
-  if (payment.status === "paid") throw createError(400, "Giao dịch đã được thanh toán");
+  if (payment.status === "paid")
+    throw createError(400, "Giao dịch đã được thanh toán");
 
   const session = await TableSession.findById(payment.tableSessionId);
   if (!session) throw createError(404, "Không tìm thấy phiên bàn");
@@ -71,20 +80,30 @@ export const confirmPayment = handleAsync(async (req, res) => {
   // 3. Đánh dấu tất cả orders của session là completed
   await Order.updateMany(
     { tableSessionId: payment.tableSessionId, status: { $ne: "cancelled" } },
-    { status: "completed", paymentStatus: "paid" }
+    { status: "completed", paymentStatus: "paid" },
   );
 
   // 4. Reset bàn: available + qrToken mới (có fallback cho Node.js bản cũ)
-  const newQrToken = typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : crypto.randomBytes(16).toString("hex");
+  const newQrToken =
+    typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : crypto.randomBytes(16).toString("hex");
 
   await Table.findByIdAndUpdate(session.tableId, {
     status: "available",
     qrToken: newQrToken,
   });
 
-  res.status(200).json(createResponse(true, 200, "Thanh toán thành công, bàn đã được reset", payment));
+  res
+    .status(200)
+    .json(
+      createResponse(
+        true,
+        200,
+        "Thanh toán thành công, bàn đã được reset",
+        payment,
+      ),
+    );
 });
 
 export const getPayments = handleAsync(async (req, res) => {
@@ -92,7 +111,11 @@ export const getPayments = handleAsync(async (req, res) => {
     .populate("tableSessionId", "customerName guestCount")
     .populate("paidBy", "fullName")
     .sort({ createdAt: -1 });
-  res.status(200).json(createResponse(true, 200, "Payments retrieved successfully", payments));
+  res
+    .status(200)
+    .json(
+      createResponse(true, 200, "Payments retrieved successfully", payments),
+    );
 });
 
 export const getPaymentDetail = handleAsync(async (req, res) => {
@@ -100,16 +123,29 @@ export const getPaymentDetail = handleAsync(async (req, res) => {
     .populate("tableSessionId")
     .populate("paidBy", "fullName");
   if (!payment) throw createError(404, "Payment not found");
-  res.status(200).json(createResponse(true, 200, "Payment retrieved successfully", payment));
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Payment retrieved successfully", payment));
 });
 
 export const updatePayment = handleAsync(async (req, res) => {
-  const payment = await Payment.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const payment = await Payment.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  });
   if (!payment) throw createError(404, "Payment not found");
-  res.status(200).json(createResponse(true, 200, "Payment updated successfully", payment));
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Payment updated successfully", payment));
 });
 
 export const deletePayment = handleAsync(async (req, res) => {
-  await Payment.findByIdAndDelete(req.params.id);
-  res.status(200).json(createResponse(true, 200, "Payment deleted successfully"));
+  const payment = await Payment.findByIdAndDelete(req.params.id);
+  if (!payment) {
+    return res
+      .status(404)
+      .json(createResponse(false, 404, "Payment not found"));
+  }
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Payment deleted successfully"));
 });
