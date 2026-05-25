@@ -18,3 +18,7 @@ export const userUpdateSchema = userCreateSchema
   .refine((body) => Object.keys(body).length > 0, {
     message: "At least one field is required",
   });
+
+export const userPasswordResetSchema = z.object({
+  password: z.string().min(6),
+});

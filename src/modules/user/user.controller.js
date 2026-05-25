@@ -75,6 +75,21 @@ export const updateUser = handleAsync(async (req, res) => {
     .json(createResponse(true, 200, "User updated successfully", user));
 });
 
+export const resetUserPassword = handleAsync(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    return res.status(404).json(createResponse(false, 404, "User not found"));
+  }
+
+  user.password = req.body.password;
+  await user.save();
+  user.password = undefined;
+
+  res
+    .status(200)
+    .json(createResponse(true, 200, "Password updated successfully", user));
+});
+
 export const deleteUser = handleAsync(async (req, res) => {
   const user = await User.findByIdAndDelete(req.params.id);
   if (!user) {
