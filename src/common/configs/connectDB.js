@@ -1,14 +1,9 @@
 import mongoose from "mongoose";
 import { configenv } from "./configenv.js";
-import { normalizeMongoUri } from "./normalizeMongoUri.js";
 
-export default async function connectDB() {
-  const uri = normalizeMongoUri(configenv.MONGODB_URI);
-
-  mongoose.set("bufferCommands", false);
-
+export async function connectDB() {
   try {
-    await mongoose.connect(uri);
+    await mongoose.connect(configenv.MONGODB_URI);
     console.log("Connect database successfully!");
   } catch (err) {
     console.error("Connect DB error:", err.message);

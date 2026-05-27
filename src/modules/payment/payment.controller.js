@@ -46,9 +46,6 @@ export const createPayment = handleAsync(async (req, res) => {
 
   // Cập nhật bàn sang waiting_payment
   await Table.findByIdAndUpdate(session.tableId, { status: "waiting_payment" });
-  await TableSession.findByIdAndUpdate(tableSessionId, {
-    status: "waiting_payment",
-  });
 
   res
     .status(201)
@@ -58,32 +55,54 @@ export const createPayment = handleAsync(async (req, res) => {
 // POST /payments/:id/confirm  — xác nhận thanh toán thành công → reset bàn
 export const confirmPayment = handleAsync(async (req, res) => {
   const payment = await Payment.findById(req.params.id);
-  if (!payment) throw createError(404, "Không tìm thấy giao dịch");
-  if (payment.status === "paid")
-    throw createError(400, "Giao dịch đã được thanh toán");
+
+  if (!payment) {
+    throw createError(404, "Không tìm thấy giao dịch");
+  }
+
+  if (payment.status !== "pending") {
+    throw createError(400, "Giao dịch không hợp lệ");
+  }
+
+  // bắt buộc xác nhận từ frontend
+  const { confirmed } = req.body;
+
+  if (!confirmed) {
+    throw createError(400, "Chưa xác nhận thanh toán");
+  }
 
   const session = await TableSession.findById(payment.tableSessionId);
-  if (!session) throw createError(404, "Không tìm thấy phiên bàn");
 
-  // 1. Đánh dấu payment paid
+  if (!session) {
+    throw createError(404, "Không tìm thấy phiên bàn");
+  }
+
+  // update payment
   payment.status = "paid";
   payment.paidAt = new Date();
   payment.transactionId = req.body?.transactionId ?? null;
+
   await payment.save();
 
-  // 2. Đóng session
+  // update session
   await TableSession.findByIdAndUpdate(payment.tableSessionId, {
     status: "paid",
     endedAt: new Date(),
   });
 
-  // 3. Đánh dấu tất cả orders của session là completed
+  // update orders
   await Order.updateMany(
-    { tableSessionId: payment.tableSessionId, status: { $ne: "cancelled" } },
-    { status: "completed", paymentStatus: "paid" },
+    {
+      tableSessionId: payment.tableSessionId,
+      status: { $ne: "cancelled" },
+    },
+    {
+      status: "completed",
+      paymentStatus: "paid",
+    },
   );
 
-  // 4. Reset bàn: available + qrToken mới (có fallback cho Node.js bản cũ)
+  // reset table
   const newQrToken =
     typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
@@ -96,14 +115,7 @@ export const confirmPayment = handleAsync(async (req, res) => {
 
   res
     .status(200)
-    .json(
-      createResponse(
-        true,
-        200,
-        "Thanh toán thành công, bàn đã được reset",
-        payment,
-      ),
-    );
+    .json(createResponse(true, 200, "Thanh toán thành công", payment));
 });
 
 export const getPayments = handleAsync(async (req, res) => {
