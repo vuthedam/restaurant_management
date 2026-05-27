@@ -6,10 +6,35 @@ import Table from "../table/table.model.js";
 import Order from "../order/order.model.js";
 
 export const createTableSession = handleAsync(async (req, res) => {
-  const tableSession = await TableSession.create({
-    ...req.body,
-    createdBy: req.user.id, // lấy từ token, không cần client gửi
+  const { tableId, reservationId, customerId, customerName, guestCount } =
+    req.body;
+
+  const table = await Table.findById(tableId);
+  if (!table) throw createError(404, "Không tìm thấy bàn");
+  if (table.status !== "available" && table.status !== "reserved") {
+    throw createError(400, "Bàn này đang không thể mở phiên mới");
+  }
+
+  const existingActive = await TableSession.findOne({
+    tableId,
+    status: "active",
   });
+  if (existingActive) {
+    throw createError(400, "Bàn này đã có phiên đang hoạt động");
+  }
+
+  const tableSession = await TableSession.create({
+    tableId,
+    reservationId: reservationId ?? null,
+    customerId: customerId ?? null,
+    customerName: customerName ?? null,
+    guestCount: guestCount ?? 1,
+    status: "active",
+    createdBy: req.user.id,
+  });
+
+  await Table.findByIdAndUpdate(tableId, { status: "occupied" });
+
   res
     .status(201)
     .json(
@@ -65,9 +90,37 @@ export const getTableSessionDetail = handleAsync(async (req, res) => {
 });
 
 export const updateTableSession = handleAsync(async (req, res) => {
+  const session = await TableSession.findById(req.params.id);
+  if (!session) throw createError(404, "Table session not found");
+
+  if (req.body.status === "cancelled") {
+    if (!["active", "waiting_payment"].includes(session.status)) {
+      throw createError(400, "Không thể hủy phiên ở trạng thái hiện tại");
+    }
+    session.status = "cancelled";
+    session.endedAt = req.body.endedAt ?? new Date();
+    await session.save();
+    await Table.findByIdAndUpdate(session.tableId, { status: "available" });
+    return res
+      .status(200)
+      .json(
+        createResponse(
+          true,
+          200,
+          "Table session updated successfully",
+          session,
+        ),
+      );
+  }
+
+  const updates = {};
+  if (req.body.customerName !== undefined)
+    updates.customerName = req.body.customerName;
+  if (req.body.guestCount !== undefined) updates.guestCount = req.body.guestCount;
+
   const tableSession = await TableSession.findByIdAndUpdate(
     req.params.id,
-    req.body,
+    updates,
     { new: true },
   );
   if (!tableSession) throw createError(404, "Table session not found");

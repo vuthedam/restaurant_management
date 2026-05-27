@@ -8,6 +8,13 @@ export const paymentCreateSchema = z.object({
   discount: z.number().min(0).optional(),
 });
 
+export const paymentConfirmSchema = z.object({
+  confirmed: z
+    .boolean()
+    .refine((v) => v === true, { message: "Chưa xác nhận thanh toán" }),
+  transactionId: z.string().trim().optional().nullable(),
+});
+
 export const paymentUpdateSchema = z
   .object({
     status: z.enum(["pending", "paid", "failed", "refunded"]).optional(),

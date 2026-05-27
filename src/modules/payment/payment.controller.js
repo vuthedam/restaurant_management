@@ -19,6 +19,8 @@ export const createPayment = handleAsync(async (req, res) => {
   if (!session) throw createError(404, "Không tìm thấy phiên bàn");
   if (session.status === "paid")
     throw createError(400, "Phiên này đã được thanh toán");
+  if (session.status !== "active")
+    throw createError(400, "Phiên bàn không còn hoạt động");
 
   // Tính tổng tiền từ tất cả orders của session
   const orders = await Order.find({
@@ -26,11 +28,17 @@ export const createPayment = handleAsync(async (req, res) => {
     status: { $ne: "cancelled" },
   });
 
+  if (!orders.length)
+    throw createError(400, "Chưa có đơn hàng để thanh toán");
+
   const subtotal = orders.reduce(
     (s, o) => s + (o.finalAmount ?? o.subtotal ?? 0),
     0,
   );
   const amount = Math.max(0, subtotal - discount);
+
+  if (amount <= 0)
+    throw createError(400, "Tổng tiền thanh toán phải lớn hơn 0");
 
   // Xóa payment pending cũ nếu có (tạo lại)
   await Payment.deleteMany({ tableSessionId, status: "pending" });
@@ -44,8 +52,7 @@ export const createPayment = handleAsync(async (req, res) => {
     status: "pending",
   });
 
-  // Cập nhật bàn sang waiting_payment
-  await Table.findByIdAndUpdate(session.tableId, { status: "waiting_payment" });
+  // Chỉ đổi trạng thái bàn/phiên khi xác nhận thanh toán (confirmPayment)
 
   res
     .status(201)
@@ -64,13 +71,6 @@ export const confirmPayment = handleAsync(async (req, res) => {
     throw createError(400, "Giao dịch không hợp lệ");
   }
 
-  // bắt buộc xác nhận từ frontend
-  const { confirmed } = req.body;
-
-  if (!confirmed) {
-    throw createError(400, "Chưa xác nhận thanh toán");
-  }
-
   const session = await TableSession.findById(payment.tableSessionId);
 
   if (!session) {
@@ -84,7 +84,7 @@ export const confirmPayment = handleAsync(async (req, res) => {
 
   await payment.save();
 
-  // update session
+  // update session + bàn: chỉ khi đã xác nhận thu tiền
   await TableSession.findByIdAndUpdate(payment.tableSessionId, {
     status: "paid",
     endedAt: new Date(),
