@@ -5,10 +5,42 @@ import createError from "../../common/utils/createError.js";
 import Payment from "./payment.model.js";
 import TableSession from "../tableSession/tableSession.model.js";
 import Order from "../order/order.model.js";
+import OrderItem from "../order/orderItem.model.js";
 import Table from "../table/table.model.js";
 
 function generatePaymentCode() {
   return `PAY-${Date.now().toString(36).toUpperCase().slice(-8)}`;
+}
+
+/** Chỉ tính tiền các món đã lên bàn (status: served). */
+async function getServedItemsForSession(tableSessionId) {
+  const orders = await Order.find({
+    tableSessionId,
+    status: { $ne: "cancelled" },
+  }).select("_id");
+
+  if (!orders.length) {
+    return { servedItems: [], unservedCount: 0, orderIds: [] };
+  }
+
+  const orderIds = orders.map((o) => o._id);
+
+  const [servedItems, unservedCount] = await Promise.all([
+    OrderItem.find({ orderId: { $in: orderIds }, status: "served" }),
+    OrderItem.countDocuments({
+      orderId: { $in: orderIds },
+      status: { $nin: ["served", "cancelled"] },
+    }),
+  ]);
+
+  return { servedItems, unservedCount, orderIds };
+}
+
+function sumItemSubtotals(items) {
+  return items.reduce(
+    (sum, item) => sum + (item.subtotal ?? item.price * item.quantity),
+    0,
+  );
 }
 
 // POST /payments  — tạo giao dịch thanh toán (pending)
@@ -22,19 +54,19 @@ export const createPayment = handleAsync(async (req, res) => {
   if (session.status !== "active")
     throw createError(400, "Phiên bàn không còn hoạt động");
 
-  // Tính tổng tiền từ tất cả orders của session
-  const orders = await Order.find({
-    tableSessionId,
-    status: { $ne: "cancelled" },
-  });
+  const { servedItems, unservedCount, orderIds } =
+    await getServedItemsForSession(tableSessionId);
 
-  if (!orders.length)
+  if (!orderIds.length)
     throw createError(400, "Chưa có đơn hàng để thanh toán");
 
-  const subtotal = orders.reduce(
-    (s, o) => s + (o.finalAmount ?? o.subtotal ?? 0),
-    0,
-  );
+  if (!servedItems.length)
+    throw createError(
+      400,
+      "Chưa có món nào đã lên bàn. Vui lòng phục vụ món trước khi thanh toán.",
+    );
+
+  const subtotal = sumItemSubtotals(servedItems);
   const amount = Math.max(0, subtotal - discount);
 
   if (amount <= 0)
@@ -54,9 +86,13 @@ export const createPayment = handleAsync(async (req, res) => {
 
   // Chỉ đổi trạng thái bàn/phiên khi xác nhận thanh toán (confirmPayment)
 
-  res
-    .status(201)
-    .json(createResponse(true, 201, "Tạo giao dịch thành công", payment));
+  res.status(201).json(
+    createResponse(true, 201, "Tạo giao dịch thành công", {
+      ...payment.toObject(),
+      servedItemCount: servedItems.length,
+      unservedItemCount: unservedCount,
+    }),
+  );
 });
 
 // POST /payments/:id/confirm  — xác nhận thanh toán thành công → reset bàn
@@ -90,17 +126,24 @@ export const confirmPayment = handleAsync(async (req, res) => {
     endedAt: new Date(),
   });
 
-  // update orders
-  await Order.updateMany(
-    {
-      tableSessionId: payment.tableSessionId,
-      status: { $ne: "cancelled" },
-    },
-    {
-      status: "completed",
-      paymentStatus: "paid",
-    },
-  );
+  // Chỉ hoàn tất các đơn mà mọi món (không hủy) đã lên bàn
+  const sessionOrders = await Order.find({
+    tableSessionId: payment.tableSessionId,
+    status: { $ne: "cancelled" },
+  });
+
+  for (const order of sessionOrders) {
+    const items = await OrderItem.find({ orderId: order._id });
+    const activeItems = items.filter((item) => item.status !== "cancelled");
+    if (!activeItems.length) continue;
+
+    const allServed = activeItems.every((item) => item.status === "served");
+    if (allServed) {
+      order.status = "completed";
+      order.paymentStatus = "paid";
+      await order.save();
+    }
+  }
 
   // reset table
   const newQrToken =
