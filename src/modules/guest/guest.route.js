@@ -8,6 +8,8 @@ import {
   placeGuestReservation,
   cancelPendingOrderItem,
 } from "./guest.controller.js";
+import { reviewCreateSchema } from "../review/review.schema.js";
+import { createReview } from "../review/review.controller.js";
 
 const guestRouter = Router();
 
@@ -16,5 +18,6 @@ guestRouter.get("/tables/:qrToken", getTableByQr);
 guestRouter.post("/orders", validBodyRequest(guestPlaceOrderSchema), placeGuestOrder);
 guestRouter.post("/reservations", validBodyRequest(guestReservationSchema), placeGuestReservation);
 guestRouter.patch("/order-items/:id/cancel", cancelPendingOrderItem);
+guestRouter.post("/reviews", validBodyRequest(reviewCreateSchema), createReview);
 
 export default guestRouter;
