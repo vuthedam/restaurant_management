@@ -4,15 +4,20 @@ import { requireAdmin } from "../../common/middlewares/guards.js";
 import { reviewCreateSchema, reviewUpdateSchema } from "./review.schema.js";
 import {
   createReview,
-  deleteReview,
-  getReviewDetail,
   getReviews,
+  checkReviewStatus,
+  getReviewDetail,
   updateReview,
+  deleteReview,
 } from "./review.controller.js";
 
 const reviewRouter = Router();
 
-reviewRouter.post("/", ...requireAdmin, validBodyRequest(reviewCreateSchema), createReview);
+// Public routes for guest reviews
+reviewRouter.post("/", validBodyRequest(reviewCreateSchema), createReview);
+reviewRouter.get("/check/:tableSessionId", checkReviewStatus);
+
+// Admin protected routes
 reviewRouter.get("/", ...requireAdmin, getReviews);
 reviewRouter.get("/:id", ...requireAdmin, getReviewDetail);
 reviewRouter.patch("/:id", ...requireAdmin, validBodyRequest(reviewUpdateSchema), updateReview);
