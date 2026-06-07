@@ -10,6 +10,8 @@ import {
 } from "./guest.controller.js";
 import { reviewCreateSchema } from "../review/review.schema.js";
 import { createReview } from "../review/review.controller.js";
+import { serviceCallCreateSchema } from "../serviceCall/serviceCall.schema.js";
+import { createGuestServiceCall } from "../serviceCall/serviceCall.controller.js";
 
 const guestRouter = Router();
 
@@ -19,5 +21,6 @@ guestRouter.post("/orders", validBodyRequest(guestPlaceOrderSchema), placeGuestO
 guestRouter.post("/reservations", validBodyRequest(guestReservationSchema), placeGuestReservation);
 guestRouter.patch("/order-items/:id/cancel", cancelPendingOrderItem);
 guestRouter.post("/reviews", validBodyRequest(reviewCreateSchema), createReview);
+guestRouter.post("/service-calls", validBodyRequest(serviceCallCreateSchema), createGuestServiceCall);
 
 export default guestRouter;

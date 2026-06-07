@@ -1,11 +1,13 @@
 import express from "express";
 import cors from "cors";
+import http from "http";
 import router from "./src/routes/index.js";
 import jsonValidator from "./src/common/middlewares/jsonValidator.js";
 import notFoundHandler from "./src/common/middlewares/notfoundHandler.js";
 import errorHandler from "./src/common/middlewares/errorHandler.js";
 import { configenv } from "./src/common/configs/configenv.js";
 import { connectDB } from "./src/common/configs/connectDB.js";
+import { initSocket } from "./src/common/configs/socket.js";
 
 const app = express();
 
@@ -24,7 +26,10 @@ app.use("/api", router);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(configenv.PORT, () => {
+const server = http.createServer(app);
+initSocket(server);
+
+server.listen(configenv.PORT, () => {
   console.log(
     `Ứng dụng của bạn đang được khởi động trên cổng ${configenv.PORT}`,
   );

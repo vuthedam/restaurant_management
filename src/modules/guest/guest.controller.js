@@ -8,6 +8,7 @@ import Order from "../order/order.model.js";
 import OrderItem from "../order/orderItem.model.js";
 import Reservation from "../reservation/reservation.model.js";
 import { User } from "../user/user.model.js";
+import ServiceCall from "../serviceCall/serviceCall.model.js";
 
 export const getPublicMenu = handleAsync(async (req, res) => {
   const categories = await Category.find({ status: "active" }).sort({ sortOrder: 1 }).lean();
@@ -76,6 +77,12 @@ export const getTableByQr = handleAsync(async (req, res) => {
       .sort({ createdAt: 1 });
   }
 
+  // Find active support request (ServiceCall)
+  const activeServiceCall = await ServiceCall.findOne({
+    tableId: table._id,
+    status: { $in: ["pending", "handling"] },
+  }).populate("handledBy", "fullName email");
+
   const result = {
     ...table.toObject(),
     activeSession: session
@@ -84,6 +91,7 @@ export const getTableByQr = handleAsync(async (req, res) => {
     activeGuestCount: session ? session.guestCount : 0,
     activeOrders,
     activeOrderItems,
+    activeServiceCall,
   };
 
   res.status(200).json(createResponse(true, 200, "OK", result));
