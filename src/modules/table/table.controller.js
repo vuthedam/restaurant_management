@@ -1,6 +1,33 @@
+import QRCode from "qrcode";
+import { configenv } from "../../common/configs/configenv.js";
 import createResponse from "../../common/utils/createResponse.js";
 import handleAsync from "../../common/utils/handleAsync.js";
 import Table from "./table.model.js";
+
+export const getQrList = handleAsync(async (req, res) => {
+  const tables = await Table.find({ isActive: true }).sort({ code: 1 });
+  const clientUrl = configenv.CLIENT_URL || "https://domain.com";
+
+  const qrList = await Promise.all(
+    tables.map(async (table) => {
+      const qrUrl = `${clientUrl.replace(/\/$/, "")}/table/${table.qrToken}`;
+      const qrImage = await QRCode.toDataURL(qrUrl);
+      return {
+        id: table._id,
+        name: table.name,
+        code: table.code,
+        qr_token: table.qrToken,
+        qr_url: qrUrl,
+        qr_image: qrImage,
+      };
+    })
+  );
+
+  res.status(200).json(
+    createResponse(true, 200, "Retrieve test QR list successfully", qrList)
+  );
+});
+
 
 export const createTable = handleAsync(async (req, res) => {
   const table = await Table.create(req.body);

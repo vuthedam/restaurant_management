@@ -24,3 +24,10 @@ export const guestReservationSchema = z.object({
   reservationTime: z.string().trim().min(1),
   note: z.string().trim().max(500).optional().nullable(),
 });
+
+export const guestCreateSessionSchema = z.object({
+  qrToken: z.string().trim().min(1),
+  customerName: z.string().trim().min(2).max(100),
+  guestCount: z.number().int().min(1).max(30),
+});
+

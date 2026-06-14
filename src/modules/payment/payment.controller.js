@@ -49,7 +49,7 @@ export const createPayment = handleAsync(async (req, res) => {
 
   const session = await TableSession.findById(tableSessionId);
   if (!session) throw createError(404, "Không tìm thấy phiên bàn");
-  if (session.status === "paid")
+  if (session.status === "paid" || session.status === "closed")
     throw createError(400, "Phiên này đã được thanh toán");
   if (session.status !== "active")
     throw createError(400, "Phiên bàn không còn hoạt động");
@@ -122,7 +122,7 @@ export const confirmPayment = handleAsync(async (req, res) => {
 
   // update session + bàn: chỉ khi đã xác nhận thu tiền
   await TableSession.findByIdAndUpdate(payment.tableSessionId, {
-    status: "paid",
+    status: "closed",
     endedAt: new Date(),
   });
 
@@ -146,14 +146,8 @@ export const confirmPayment = handleAsync(async (req, res) => {
   }
 
   // reset table
-  const newQrToken =
-    typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : crypto.randomBytes(16).toString("hex");
-
   await Table.findByIdAndUpdate(session.tableId, {
     status: "available",
-    qrToken: newQrToken,
   });
 
   res

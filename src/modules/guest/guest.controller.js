@@ -258,3 +258,67 @@ export const placeGuestReservation = handleAsync(async (req, res) => {
     createResponse(true, 201, "Đặt bàn thành công, vui lòng chờ nhân viên xác nhận", reservation)
   );
 });
+
+export const createGuestTableSession = handleAsync(async (req, res) => {
+  const { qrToken, customerName, guestCount } = req.body;
+
+  // 1. Tìm bàn theo qrToken
+  const table = await Table.findOne({ qrToken, isActive: true });
+  if (!table) {
+    return res.status(404).json(createResponse(false, 404, "Không tìm thấy bàn"));
+  }
+
+  // 2. Kiểm tra phiên hoạt động hiện tại
+  const existingActive = await TableSession.findOne({
+    tableId: table._id,
+    status: "active",
+  });
+  if (existingActive) {
+    return res.status(200).json(
+      createResponse(true, 200, "Bàn đang có phiên hoạt động", existingActive)
+    );
+  }
+
+  // 3. Tìm tài khoản Admin mặc định hoặc bất kỳ staff/admin nào để làm createdBy (giá trị kỹ thuật)
+  let staffUser = await User.findOne({
+    email: "admin@appetite.com",
+    isActive: true,
+  });
+
+  if (!staffUser) {
+    staffUser = await User.findOne({
+      isActive: true,
+      role: { $in: ["admin", "staff"] },
+    });
+  }
+
+  if (!staffUser) {
+    staffUser = await User.findOne({ isActive: true });
+  }
+
+  if (!staffUser) {
+    return res
+      .status(503)
+      .json(createResponse(false, 503, "Hệ thống chưa sẵn sàng nhận đơn"));
+  }
+
+  // 4. Tạo TableSession mới
+  const session = await TableSession.create({
+    tableId: table._id,
+    customerName,
+    guestCount,
+    createdBy: staffUser._id,
+    status: "active",
+  });
+
+  // 5. Cập nhật trạng thái bàn ăn
+  if (table.status === "available" || table.status === "reserved") {
+    table.status = "occupied";
+    await table.save();
+  }
+
+  res.status(201).json(
+    createResponse(true, 201, "Mở bàn thành công", session)
+  );
+});
+

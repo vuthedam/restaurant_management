@@ -8,14 +8,17 @@ import {
   getTableDetail,
   getTables,
   updateTable,
+  getQrList,
 } from "./table.controller.js";
 
 const tableRouter = Router();
 
 tableRouter.post("/", ...requireAdmin, validBodyRequest(tableCreateSchema), createTable);
+tableRouter.get("/qr-list", getQrList);
 tableRouter.get("/", ...requireStaff, getTables);
 tableRouter.get("/:id", ...requireStaff, getTableDetail);
 tableRouter.patch("/:id", ...requireStaff, validBodyRequest(tableUpdateSchema), updateTable);
 tableRouter.delete("/:id", ...requireAdmin, deleteTable);
 
 export default tableRouter;
+

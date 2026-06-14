@@ -22,8 +22,8 @@ export const createReview = handleAsync(async (req, res) => {
     throw createError(404, "Phiên bàn không tồn tại.");
   }
 
-  // Check if TableSession status is "paid"
-  if (session.status !== "paid") {
+  // Check if TableSession status is "paid" or "closed"
+  if (session.status !== "paid" && session.status !== "closed") {
     throw createError(400, "Chỉ có thể đánh giá sau khi hoàn tất thanh toán.");
   }
 
@@ -110,7 +110,7 @@ export const checkReviewStatus = handleAsync(async (req, res) => {
       .json(createResponse(false, 404, "Phiên bàn không tồn tại."));
   }
 
-  if (session.status !== "paid") {
+  if (session.status !== "paid" && session.status !== "closed") {
     return res.status(200).json(
       createResponse(true, 200, "OK", {
         canReview: false,
